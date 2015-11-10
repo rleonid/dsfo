@@ -1,0 +1,2 @@
+true: annot, bin_annot, principal
+<src/*.cmx> and not <src/dsfo.cm*> : for-pack(Dsfo)
