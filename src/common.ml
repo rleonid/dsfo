@@ -4,6 +4,8 @@ let protect ~f ~finally =
   finally ();
   r
 
+let failwithf fmt = Printf.ksprintf failwith fmt
+
 (* Taken from M.Mottl's myocamlbuild.ml *)
 let read_lines_from_cmd ~max_lines cmd =
   let ic = Unix.open_process_in cmd in

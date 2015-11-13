@@ -2,9 +2,8 @@
    http://yann.lecun.com/exdb/mnist/
 *)
 open Printf
+open Common
 open Bigarray
-
-let failwithf fmt = ksprintf failwith fmt
 
 let test_images_fname = "t10k-images-idx3-ubyte"
 let test_labels_fname = "t10k-labels-idx1-ubyte"
@@ -37,12 +36,12 @@ let download ?(extract=true) ?(dir="") fname =
         (Filename.concat dir (gzipped fname))
   in
   let () = printf "cmd : %s\n%!" cmd in
-  Common.read_lines_from_cmd ~max_lines:1 cmd
+  read_lines_from_cmd ~max_lines:1 cmd
 
 let map_file_labels fname =
   let fd = Unix.openfile fname [Unix.O_RDONLY] 0o644 in
   let ic = Unix.in_channel_of_descr fd in
-  Common.protect ~finally:(fun () -> close_in ic)
+  protect ~finally:(fun () -> close_in ic)
     ~f:(fun () ->
       let mn = input_binary_int ic in
       if mn <> 2049 then
@@ -54,39 +53,10 @@ let map_file_labels fname =
         else
           Array1.map_file fd ~pos:8L Int8_unsigned Fortran_layout false size)
 
-let parse_images ?(normalize_by=Some 255.) fname =
-  let ic = open_in_bin fname in
-  let mn = input_binary_int ic in
-  if mn <> 2051 then
-    raise (Invalid_argument (sprintf "Wrong magic number got %d expected 2051" mn))
-  else
-    let size = input_binary_int ic in
-    let rows = input_binary_int ic in
-    let cols = input_binary_int ic in
-    let feature_size = rows * cols in
-    let data = Array2.create Float64 Fortran_layout feature_size size in
-    let rec read_row r c =
-      if c > feature_size then ()
-      else
-        let vb = float_of_int (int_of_char (input_char ic)) in
-        let vn = match normalize_by with | None -> vb | Some m -> vb /. m in
-        Array2.set data c r vn;
-        read_row r (c + 1)
-    in
-    let rec loop i =
-      try
-        let () = read_row i 1 in
-        loop (i + 1)
-      with End_of_file ->
-        close_in ic;
-        data
-    in
-    loop 1
-
 let map_file_images fname=
   let fd = Unix.openfile fname [Unix.O_RDONLY] 0o644 in
   let ic = Unix.in_channel_of_descr fd in
-  Common.protect ~finally:(fun () -> close_in ic)
+  protect ~finally:(fun () -> close_in ic)
     ~f:(fun () ->
       let mn = input_binary_int ic in
       if mn <> 2051 then
