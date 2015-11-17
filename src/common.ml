@@ -5,6 +5,7 @@ let protect ~f ~finally =
   r
 
 let failwithf fmt = Printf.ksprintf failwith fmt
+let invalid_argf fmt = Printf.ksprintf failwith fmt
 
 (* Taken from M.Mottl's myocamlbuild.ml *)
 let read_lines_from_cmd ~max_lines cmd =

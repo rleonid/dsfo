@@ -1,9 +1,9 @@
-(* Load MNIST data 
+(* Load MNIST data
    http://yann.lecun.com/exdb/mnist/
 *)
 open Printf
 open Common
-open Bigarray
+open Bigarrayo
 
 let test_images_fname = "t10k-images-idx3-ubyte"
 let test_labels_fname = "t10k-labels-idx1-ubyte"
@@ -14,7 +14,7 @@ let url = "http://yann.lecun.com/exdb/mnist/"
 
 let files =
   [ test_images_fname
-  ; test_labels_fname 
+  ; test_labels_fname
   ; train_images_fname
   ; train_labels_fname
   ]
@@ -38,87 +38,122 @@ let download ?(extract=true) ?(dir="") fname =
   let () = printf "cmd : %s\n%!" cmd in
   read_lines_from_cmd ~max_lines:1 cmd
 
-let map_file_labels fname =
+(* Avoid writing a full IDX parser until necessary. *)
+let map_file_gen expected fname ~read_header ~read_rest =
   let fd = Unix.openfile fname [Unix.O_RDONLY] 0o644 in
   let ic = Unix.in_channel_of_descr fd in
   protect ~finally:(fun () -> close_in ic)
     ~f:(fun () ->
       let mn = input_binary_int ic in
-      if mn <> 2049 then
-        failwithf "Wrong magic number got %d expected 2049" mn
+      if mn <> expected then
+        failwithf "Wrong magic number got %d expected %d" mn expected
       else
-        let size = input_binary_int ic in
+        let h = read_header ic in
         if Unix.lseek fd 0 Unix.SEEK_SET <> 0 then
           failwithf "Failed to seek back to beginning"
         else
-          Array1.map_file fd ~pos:8L Int8_unsigned Fortran_layout false size)
+          read_rest h fd)
 
-let map_file_images fname=
-  let fd = Unix.openfile fname [Unix.O_RDONLY] 0o644 in
-  let ic = Unix.in_channel_of_descr fd in
-  protect ~finally:(fun () -> close_in ic)
-    ~f:(fun () ->
-      let mn = input_binary_int ic in
-      if mn <> 2051 then
-        failwithf "Wrong magic number got %d expected 2049" mn
-      else
+let map_file_labels =
+  map_file_gen 2049
+    ~read_header:input_binary_int
+    ~read_rest:(fun size fd ->
+        A1.map_file fd ~pos:8L Int8_unsigned C_layout false size)
+
+let map_file_images =
+  map_file_gen 2051
+    ~read_header:(fun ic ->
         let size = input_binary_int ic in
         let rows = input_binary_int ic in
         let cols = input_binary_int ic in
-        if Unix.lseek fd 0 Unix.SEEK_SET <> 0 then
-          failwithf "Failed to seek back to beginning"
-        else
-          Array3.map_file fd ~pos:16L Int8_unsigned C_layout false
+        (size, rows, cols))
+    ~read_rest:(fun (size, rows, cols) fd ->
+          A3.map_file fd ~pos:16L Int8_unsigned C_layout false
             size rows cols)
+
+let scale_by_255 c = (float_of_int c) /. 255.0
+
+let labeled_fortran_style labels images to_float label_encoding_size encode =
+  let n_l = A1.dim labels in
+  let n_i = A3.dim1 images in
+  if n_l <> n_i then
+    invalid_argf "label length %d doesn't equal image length %d" n_l n_i
+  else
+    let r = A3.dim2 images in
+    let c = A3.dim3 images in
+    let data_width = r * c in
+    let w = data_width + label_encoding_size in
+    let encoded = Array.init n_l (fun col -> encode labels.{col}) in
+    A2.init Float64 Fortran_layout w n_l (fun row col ->
+      let c_row = row - 1 in
+      let c_col = col - 1 in
+      if c_row < data_width then
+        to_float (images.{c_col, c_row mod r, c_row / r})
+      else
+        encoded.(c_col).(c_row - data_width))
+
+let dummy_encoding = function
+  | 0 -> [| 1.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.|]
+  | 1 -> [| 0.; 1.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.|]
+  | 2 -> [| 0.; 0.; 1.; 0.; 0.; 0.; 0.; 0.; 0.; 0.|]
+  | 3 -> [| 0.; 0.; 0.; 1.; 0.; 0.; 0.; 0.; 0.; 0.|]
+  | 4 -> [| 0.; 0.; 0.; 0.; 1.; 0.; 0.; 0.; 0.; 0.|]
+  | 5 -> [| 0.; 0.; 0.; 0.; 0.; 1.; 0.; 0.; 0.; 0.|]
+  | 6 -> [| 0.; 0.; 0.; 0.; 0.; 0.; 1.; 0.; 0.; 0.|]
+  | 7 -> [| 0.; 0.; 0.; 0.; 0.; 0.; 0.; 1.; 0.; 0.|]
+  | 8 -> [| 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 1.; 0.|]
+  | 9 -> [| 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 1.|]
+  | x -> invalid_argf "this is not a digit in mnist %d" x
+
+let fortran_style_data = function
+  | `Test ->
+    let images = map_file_images test_images_fname in
+    let labels = map_file_labels test_labels_fname in
+    labeled_fortran_style labels images scale_by_255 10 dummy_encoding
+  | `Train ->
+    let images = map_file_images train_images_fname in
+    let labels = map_file_labels train_labels_fname in
+    labeled_fortran_style labels images scale_by_255 10 dummy_encoding
  
+let cache_fname = sprintf "mnist_cache_%s.dat"
 
-(*
-let row_to_square_gen r s =
-  reshape (genarray_of_array1 r) [| s; s |]
-  |> array2_of_genarray
-  |> Mat.transpose
-
-let join images labels =
-  let m  = Mat.dim1 images in
-  let n  = Mat.dim2 images in
-  let td = Mat.make0 (m + 10) n in
-  let td = lacpy ~b:td images in
-  Array.iteri (fun idx label ->
-    let row = label + 785 in (* 0 at 785 *)
-    Array2.set td row (idx + 1) 1.)
-    labels;
-  td
-
-let test_cache_fname = "mnist_test_cache.dat"
-let train_cache_fname = "mnist_train_cache.dat"
-
-let from_cache fname (d1, d2) uncached =
+let from_cache fname d1 d2 uncached =
   if Sys.file_exists fname then
     let fd = Unix.openfile fname [Unix.O_RDONLY] 0o600 in
-    let () = Printf.printf "using %s as cache\n" fname in
-    Array2.map_file fd Float64 Fortran_layout false d1 d2
+    let td = A2.map_file fd Float64 Fortran_layout false d1 d2 in
+    Unix.close fd;
+    td
   else
     let td = uncached () in
     let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o644 in
-    let rd = Array2.map_file fd Float64 Fortran_layout true d1 d2 in
-    lacpy ~b:rd td
+    let rd = A2.map_file fd Float64 Fortran_layout true d1 d2 in
+    A2.blit td rd;
+    Unix.close fd;
+    td
 
 let data ?(cache=true) m =
   let uncached, fname, cols =
     match m with
     | `Test ->
-        (fun () -> join (parse_images test_images_fname)
-                        (parse_labels test_labels_fname)),
-        test_cache_fname,
+        (fun () -> fortran_style_data `Test),
+        (cache_fname "test"),
         10000
     | `Train ->
-        (fun () -> join (parse_images train_images_fname)
-                        (parse_labels train_labels_fname)),
-        train_cache_fname,
+        (fun () -> fortran_style_data `Train),
+        (cache_fname "train"),
         60000
   in
   if cache then
-    from_cache fname (794,cols) uncached
+    from_cache fname 794 cols uncached
   else
     uncached ()
-   *)
+
+let decode dt i =
+  let w = 28 * 28 in
+  let v = A2.slice_right dt i in
+  let m =
+    A1.sub v 1 w
+    |> genarray_of_array1
+    |> (fun g -> reshape_2 g 28 28) 
+  in
+  m, A1.sub v (w + 1) 10

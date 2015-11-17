@@ -1,5 +1,5 @@
 
-PACKAGES=bigarray
+PACKAGES=bau
 
 default: dsfo.cmxa
 
