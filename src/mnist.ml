@@ -23,20 +23,23 @@ let gzipped f = f ^ ".gz"
 let encoded = List.map gzipped files
 
 let td = function
-    | None -> Filename.get_temp_dir_name ()
-    | Some d -> d
+  | None -> Filename.get_temp_dir_name ()
+  | Some d -> d
 
-let download ?(extract=true) ?(dir="") fname =
+let fp ?dir fname =
+  match dir with None -> fname | Some dir -> Filename.concat dir fname
+
+let download_driver ?(extract=true) ?dir fname =
   let cmd =
     if extract then
       sprintf "curl %s%s | gunzip -c > %s" url (gzipped fname)
-        (Filename.concat dir fname)
+        (fp ?dir fname)
     else
-      sprintf "curl %s%s > %s "  url (gzipped fname)
-        (Filename.concat dir (gzipped fname))
+      sprintf "curl %s%s > %s " url (gzipped fname)
+        (fp ?dir (gzipped fname))
   in
-  let () = printf "cmd : %s\n%!" cmd in
-  read_lines_from_cmd ~max_lines:1 cmd
+  let c = Sys.command cmd in
+  if c = 0 then () else invalid_argf "failed %d" c
 
 (* Avoid writing a full IDX parser until necessary. *)
 let map_file_gen expected fname ~read_header ~read_rest =
@@ -105,15 +108,29 @@ let dummy_encoding = function
   | 9 -> [| 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 1.|]
   | x -> invalid_argf "this is not a digit in mnist %d" x
 
-let fortran_style_data = function
+let fortran_style_data ?dir = function
   | `Test ->
-    let images = map_file_images test_images_fname in
-    let labels = map_file_labels test_labels_fname in
-    labeled_fortran_style labels images scale_by_255 10 dummy_encoding
+    let tif = fp ?dir test_images_fname in
+    let tlf = fp ?dir test_labels_fname in
+    if not (Sys.file_exists tif) then
+      invalid_argf "Missing file %s" tif
+    else if not (Sys.file_exists tlf) then
+      invalid_argf "Missing file %s" tlf
+    else
+      let images = map_file_images tif in
+      let labels = map_file_labels tlf in
+      labeled_fortran_style labels images scale_by_255 10 dummy_encoding
   | `Train ->
-    let images = map_file_images train_images_fname in
-    let labels = map_file_labels train_labels_fname in
-    labeled_fortran_style labels images scale_by_255 10 dummy_encoding
+    let tif = fp ?dir train_images_fname in
+    let tlf = fp ?dir train_labels_fname in
+    if not (Sys.file_exists tif) then
+      invalid_argf "Missing file %s" tif
+    else if not (Sys.file_exists tlf) then
+      invalid_argf "Missing file %s" tlf
+    else
+      let images = map_file_images tif in
+      let labels = map_file_labels tlf in
+      labeled_fortran_style labels images scale_by_255 10 dummy_encoding
  
 let cache_fname = sprintf "mnist_cache_%s.dat"
 
@@ -131,15 +148,23 @@ let from_cache fname d1 d2 uncached =
     Unix.close fd;
     td
 
-let data ?(cache=true) m =
+let download ?dir = function
+  | `Test ->
+    download_driver ?dir test_images_fname;
+    download_driver ?dir test_labels_fname;
+  | `Train ->
+    download_driver ?dir train_images_fname;
+    download_driver ?dir train_labels_fname
+
+let data ?dir ?(cache=true) m =
   let uncached, fname, cols =
     match m with
     | `Test ->
-        (fun () -> fortran_style_data `Test),
+        (fun () -> fortran_style_data ?dir `Test),
         (cache_fname "test"),
         10000
     | `Train ->
-        (fun () -> fortran_style_data `Train),
+        (fun () -> fortran_style_data ?dir `Train),
         (cache_fname "train"),
         60000
   in
