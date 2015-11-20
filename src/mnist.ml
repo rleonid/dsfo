@@ -26,9 +26,6 @@ let td = function
   | None -> Filename.get_temp_dir_name ()
   | Some d -> d
 
-let fp ?dir fname =
-  match dir with None -> fname | Some dir -> Filename.concat dir fname
-
 let download_driver ?(extract=true) ?dir fname =
   let cmd =
     if extract then

@@ -26,10 +26,17 @@ let read_lines_from_cmd ~max_lines cmd =
   close_in ic;
   List.rev !lines_ref
 
+(* Replace these with appropriate OCaml libraries? *)
 let () =
   if read_lines_from_cmd ~max_lines:1 "which curl" = [] then
     failwith "can't curl"
   else if read_lines_from_cmd ~max_lines:1 "which gunzip" = [] then
     failwith "can't gunzip"
+  else if read_lines_from_cmd ~max_lines:1 "which tar" = [] then
+    failwith "can't tar"
   else
     ()
+
+let fp ?dir fname =
+  match dir with None -> fname | Some dir -> Filename.concat dir fname
+
