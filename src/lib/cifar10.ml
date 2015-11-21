@@ -45,7 +45,7 @@ let fortran_style_data a =
       float a.{c-1,r}
     else
       let label = a.{c-1,0} in
-      if label = r - image_rows_ub_fortran then
+      if label = r - image_rows_ub_fortran - 1 then
         1.0
       else
         0.0)
@@ -118,22 +118,4 @@ let decode dt i =
     in
     loop 1
   in
-  [|red; green; blue|], label
-
-let aligned_native f g =
-  Array.init 32 (fun i ->
-    Array.init 32 (fun j ->
-      let o = 32 * i + j in
-      g (f (o)) (f (o + 1024)) (f (o + 2048))))
-
-let aligned_array2_fortran ~d f g =
-  let a = Array2.create d Fortran_layout 32 32 in
-  for i = 1 to 32 do
-    for j = 1 to 32 do
-      let o = 32 * i + j in
-      Array2.unsafe_set a i j (g (f o) (f (o + 1024)) (f (o + 2048)))
-    done
-  done;
-  a
-
-
+  (red, green, blue), label
