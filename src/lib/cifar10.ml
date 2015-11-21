@@ -70,6 +70,8 @@ let from_cache fname uncached =
     Unix.close fd;
     td
 
+type data_m = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array2.t
+
 let data ?dir ?(cache=true) m =
   let uncached, fname =
     match m with
@@ -101,6 +103,8 @@ let label_to_string = function
   | 8 -> "ship"
   | 9 -> "truck"
   | x -> invalid_arg (sprintf "Only [0,9] acceptable CIFAR-10 labels: %d" x)
+
+type color_v = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array1.t 
 
 let decode dt i =
   let col = A2.slice_right dt i in
