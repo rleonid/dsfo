@@ -1,4 +1,4 @@
-#directory "_build/src/" ;;
+#directory "_build/src/lib" ;;
 #require "bau.top";;
 #load_rec "dsfo.cma";;
 open Dsfo
