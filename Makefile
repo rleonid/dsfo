@@ -1,10 +1,15 @@
 
-PACKAGES=bau
+DSFOPKGS=bau
+DSVISPKGS=$(DSFOPKGS) graphics
+LIB_EXTS=cma cmxa cmxs
 
-default: dsfo.cmxa
+default: dsfo dsvis
 
-dsfo.cmxa:
-	ocamlbuild -use-ocamlfind $(foreach package, $(PACKAGES),-package $(package)) -I src dsfo.cma dsfo.cmxa dsfo.cmxs
+dsfo:
+	ocamlbuild -use-ocamlfind $(foreach p, $(DSFOPKGS),-pkg $(p)) -I src/lib $(foreach e,$(LIB_EXTS),dsfo.$(e))
+
+dsvis:
+	ocamlbuild -use-ocamlfind $(foreach p, $(DSVISPKGS),-pkg $(p)) -I src/lib -I src/vis $(foreach e,$(LIB_EXTS),dsvis.$(e))
 
 clean:
 	ocamlbuild -clean
