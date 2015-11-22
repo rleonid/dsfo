@@ -1,0 +1,15 @@
+description="Data Sets For OCaml"
+requires="bau"
+version="0.0.0"
+directory="."
+archive(byte)="dsfo.cma"
+archive(native)="dsfo.cmxa"
+package "vis" (
+ description = "Add visualization capabilities, requires graphics."
+ requires="graphics,dsfo"
+ archive(byte) = "dsvis.cma"
+ archive(byte, plugin) = "dsvis.cma"
+ archive(native) = "dsvis.cmxa"
+ archive(native, plugin) = "dsvis.cmxs"
+ exists_if = "dsvis.cma"
+)

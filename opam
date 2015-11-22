@@ -1,0 +1,17 @@
+opam-version: "1.2"
+name: "dsfo"
+version: "0.0.0"
+available: [ ocaml-version >= "4.01" ]
+maintainer: "Leonid Rozenberg <leonidr@gmail.com>"
+authors: "Leonid Rozenberg <leonidr@gmail.com>"
+homepage: "https://github.com/rleonid/dsfo/"
+dev-repo: "https://github.com/rleonid/dsfo.git"
+bug-reports: "https://github.com/rleonid/dsfo/issues"
+license: "Apache2"
+build: [make]
+install: [make "install"]
+remove: ["ocamlfind" "remove" "dsfo"]
+depends: [
+  "ocamlfind" {build}
+  "bau"
+]
