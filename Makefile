@@ -4,7 +4,7 @@ DSVISPKGS=$(DSFOPKGS) graphics
 LIB_EXTS=cma cmxa cmxs
 INSTALL_EXTS=$(LIB_EXTS) a o cmi cmo cmx
 
-default: dsfo dsvis
+default: dsfo
 
 dsfo:
 	ocamlbuild -use-ocamlfind $(foreach p, $(DSFOPKGS),-pkg $(p)) -I src/lib $(foreach e,$(LIB_EXTS),dsfo.$(e))
