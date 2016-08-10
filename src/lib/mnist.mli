@@ -20,11 +20,11 @@ val download : ?dir:string -> [< `Test | `Train ] -> unit
   @raise Invalid_argument if necessary files are not not in [dir].
 *)
 val data : ?dir:string -> ?cache:bool -> [< `Test | `Train ] ->
-  (float, Bigarrayo.float64_elt, Bigarrayo.fortran_layout) Bigarrayo.A2.t
+  (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array2.t
 
 
 (** [decode dataset index] separate the training and label parts stored in a
     column vector at the specified index. *)
-val decode : ('a, 'b, Bigarray.fortran_layout) Bigarrayo.A2.t -> int ->
-              ('a, 'b, Bigarray.fortran_layout) Bigarrayo.Array2.t * 
-              ('a, 'b, Bigarray.fortran_layout) Bigarrayo.A1.t 
+val decode : ('a, 'b, Bigarray.fortran_layout) Bigarray.Array2.t -> int ->
+              ('a, 'b, Bigarray.fortran_layout) Bigarray.Array2.t * 
+              ('a, 'b, Bigarray.fortran_layout) Bigarray.Array1.t 

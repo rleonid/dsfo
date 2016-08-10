@@ -13,5 +13,5 @@ install: [make "install"]
 remove: ["ocamlfind" "remove" "dsfo"]
 depends: [
   "ocamlfind" {build}
-  "bau"
+  "bau" { >= "0.0.3" }
 ]
