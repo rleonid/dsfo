@@ -3,7 +3,7 @@
 *)
 open Printf
 open Common
-open Bigarrayo
+open BigarrayExt
 
 let test_images_fname = "t10k-images-idx3-ubyte"
 let test_labels_fname = "t10k-labels-idx1-ubyte"
@@ -58,7 +58,7 @@ let map_file_labels =
   map_file_gen 2049
     ~read_header:input_binary_int
     ~read_rest:(fun size fd ->
-        A1.map_file fd ~pos:8L Int8_unsigned C_layout false size)
+        Array1.map_file fd ~pos:8L Int8_unsigned C_layout false size)
 
 let map_file_images =
   map_file_gen 2051
@@ -68,23 +68,23 @@ let map_file_images =
         let cols = input_binary_int ic in
         (size, rows, cols))
     ~read_rest:(fun (size, rows, cols) fd ->
-          A3.map_file fd ~pos:16L Int8_unsigned C_layout false
+          Array3.map_file fd ~pos:16L Int8_unsigned C_layout false
             size rows cols)
 
 let scale_by_255 c = (float_of_int c) /. 255.0
 
 let labeled_fortran_style labels images to_float label_encoding_size encode =
-  let n_l = A1.dim labels in
-  let n_i = A3.dim1 images in
+  let n_l = Array1.dim labels in
+  let n_i = Array3.dim1 images in
   if n_l <> n_i then
     invalid_argf "label length %d doesn't equal image length %d" n_l n_i
   else
-    let r = A3.dim2 images in
-    let c = A3.dim3 images in
+    let r = Array3.dim2 images in
+    let c = Array3.dim3 images in
     let data_width = r * c in
     let w = data_width + label_encoding_size in
     let encoded = Array.init n_l (fun col -> encode labels.{col}) in
-    A2.init Float64 Fortran_layout w n_l (fun row col ->
+    Array2.init Float64 Fortran_layout w n_l (fun row col ->
       let c_row = row - 1 in
       let c_col = col - 1 in
       if c_row < data_width then
@@ -134,14 +134,14 @@ let cache_fname = sprintf "mnist_cache_%s.dat"
 let from_cache fname d1 d2 uncached =
   if Sys.file_exists fname then
     let fd = Unix.openfile fname [Unix.O_RDONLY] 0o600 in
-    let td = A2.map_file fd Float64 Fortran_layout false d1 d2 in
+    let td = Array2.map_file fd Float64 Fortran_layout false d1 d2 in
     Unix.close fd;
     td
   else
     let td = uncached () in
     let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o644 in
-    let rd = A2.map_file fd Float64 Fortran_layout true d1 d2 in
-    A2.blit td rd;
+    let rd = Array2.map_file fd Float64 Fortran_layout true d1 d2 in
+    Array2.blit td rd;
     Unix.close fd;
     td
 
@@ -172,10 +172,10 @@ let data ?dir ?(cache=true) m =
 
 let decode dt i =
   let w = 28 * 28 in
-  let v = A2.slice_right dt i in
+  let v = Array2.slice_right dt i in
   let m =
-    A1.sub v 1 w
+    Array1.sub v 1 w
     |> genarray_of_array1
     |> (fun g -> reshape_2 g 28 28) 
   in
-  m, A1.sub v (w + 1) 10
+  m, Array1.sub v (w + 1) 10

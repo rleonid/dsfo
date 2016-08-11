@@ -3,7 +3,7 @@
  *)
 open Common
 open Printf
-open Bigarrayo
+open BigarrayExt
 
 let train_batch_fname n =
   match n with
@@ -40,7 +40,7 @@ let image_rows_ub_fortran = 3 * 32 * 32
 let label_rows_ub_fortran = image_rows_ub_fortran + 10
 
 let fortran_style_data a =
-  A2.init Float64 Fortran_layout label_rows_ub_fortran items (fun r c ->
+  Array2.init Float64 Fortran_layout label_rows_ub_fortran items (fun r c ->
     if r <= image_rows_ub_fortran then
       float a.{c-1,r}
     else
@@ -56,7 +56,7 @@ let from_cache fname uncached =
   if Sys.file_exists fname then
     let fd = Unix.openfile fname [Unix.O_RDONLY] 0o600 in
     let td =
-      A2.map_file fd Float64 Fortran_layout false label_rows_ub_fortran items
+      Array2.map_file fd Float64 Fortran_layout false label_rows_ub_fortran items
     in
     Unix.close fd;
     td
@@ -64,9 +64,9 @@ let from_cache fname uncached =
     let td = uncached () in
     let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o644 in
     let rd =
-      A2.map_file fd Float64 Fortran_layout true label_rows_ub_fortran items
+      Array2.map_file fd Float64 Fortran_layout true label_rows_ub_fortran items
     in
-    A2.blit td rd;
+    Array2.blit td rd;
     Unix.close fd;
     td
 
@@ -107,12 +107,12 @@ let label_to_string = function
 type color_v = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array1.t 
 
 let decode dt i =
-  let col = A2.slice_right dt i in
-  let label_part = A1.sub col 3073 10 in
-  let image_part = A1.sub col 1 3072 in
-  let red = A1.sub image_part 1 1024 in
-  let green = A1.sub image_part 1024 1024 in
-  let blue = A1.sub image_part 2048 1024 in
+  let col = Array2.slice_right dt i in
+  let label_part = Array1.sub col 3073 10 in
+  let image_part = Array1.sub col 1 3072 in
+  let red = Array1.sub image_part 1 1024 in
+  let green = Array1.sub image_part 1024 1024 in
+  let blue = Array1.sub image_part 2048 1024 in
   let label =
     let rec loop i =
       if label_part.{i} = 1.0 then

@@ -1,0 +1,10 @@
+language: c
+sudo: required
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
+script:
+  - bash -ex .travis-opam.sh
+os:
+  - linux
+  - osx
+env:
+  - PACKAGE=dsfo OCAML_VERSION=4.03 OPAM_VERSION=1.2.2

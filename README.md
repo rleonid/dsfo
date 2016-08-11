@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/rleonid/dsfo.svg?branch=master)](https://travis-ci.org/rleonid/dsfo)
 
 Download (`anyhow`) and interact (`ocaml`) with common machine learning datasets.
 
