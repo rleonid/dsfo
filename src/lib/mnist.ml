@@ -5,6 +5,9 @@ open Printf
 open Common
 open BigarrayExt
 
+let description =
+  "The MNIST database of handwritten digits, available from this page, has a training set of 60,000 examples, and a test set of 10,000 examples. It is a subset of a larger set available from NIST. The digits have been size-normalized and centered in a fixed-size image."
+
 let test_images_fname = "t10k-images-idx3-ubyte"
 let test_labels_fname = "t10k-labels-idx1-ubyte"
 let train_images_fname = "train-images-idx3-ubyte"
@@ -128,7 +131,7 @@ let fortran_style_data ?dir = function
       let images = map_file_images tif in
       let labels = map_file_labels tlf in
       labeled_fortran_style labels images scale_by_255 10 dummy_encoding
- 
+
 let cache_fname = sprintf "mnist_cache_%s.dat"
 
 let from_cache fname d1 d2 uncached =
@@ -176,6 +179,6 @@ let decode dt i =
   let m =
     Array1.sub v 1 w
     |> genarray_of_array1
-    |> (fun g -> reshape_2 g 28 28) 
+    |> (fun g -> reshape_2 g 28 28)
   in
   m, Array1.sub v (w + 1) 10

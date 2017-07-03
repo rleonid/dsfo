@@ -1,4 +1,6 @@
-
+(** Some utility methods, and a test to make sure that we can call out to
+    helpful utilities (curl, gunzip, tar) for getting and processing the
+    data. *)
 let protect ~f ~finally =
   let r = try f () with e -> finally (); raise e in
   finally ();

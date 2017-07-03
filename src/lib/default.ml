@@ -1,9 +1,14 @@
 (* The Default data set, extracted from the R package of
-   "An Introduction to Statistical Learning Theory" by Gareth
+   "An Introduction to Statistical Learning Theory" by Gareth et. al.
+
 
   $ awk -F "," '{print $1, ",{ student =",$2, "; balance =", $3, "; income =", $4, "};"}' default.csv > default.ml
   Then sub as needed.
+
+  http://www-bcf.usc.edu/~gareth/ISL/data.html
 *)
+
+let description = "The default data set from \"An Introduction to Statistical Learning\" by Gareth et.al"
 
 type value = { student : bool
              ; balance : float

@@ -1,9 +1,11 @@
 (* Load CIFAR-10 data
- * http://www.cs.toronto.edu/~kriz/cifar.html
+   http://www.cs.toronto.edu/~kriz/cifar.html
  *)
 open Common
 open Printf
 open BigarrayExt
+
+let description = "The CIFAR-10 and CIFAR-100 are labeled subsets of the 80 million tiny images dataset."
 
 let train_batch_fname n =
   match n with
@@ -104,7 +106,7 @@ let label_to_string = function
   | 9 -> "truck"
   | x -> invalid_arg (sprintf "Only [0,9] acceptable CIFAR-10 labels: %d" x)
 
-type color_v = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array1.t 
+type color_v = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array1.t
 
 let decode dt i =
   let col = Array2.slice_right dt i in

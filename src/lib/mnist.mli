@@ -2,6 +2,8 @@
    http://yann.lecun.com/exdb/mnist/
 *)
 
+val description : string
+
 (** Download the necessary files to [dir].
 
   @param dir Where to download files, defaults to current dir.

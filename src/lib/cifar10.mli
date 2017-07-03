@@ -1,5 +1,8 @@
 
 (** Download the data *)
+
+val description : string
+
 val download : ?extract:bool -> ?dir:string -> unit -> unit
 
 type data_m = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array2.t
