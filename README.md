@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/rleonid/dsfo.svg?branch=master)](https://travis-ci.org/rleonid/dsfo)
 
-Download (`anyhow`) and interact (`ocaml`) with common machine learning datasets.
+TL;DR: Download (`anyhow`) and interact (`ocaml`) with common machine learning datasets.
 
   - [MNIST](http://yann.lecun.com/exdb/mnist/)
 
@@ -24,3 +24,7 @@ Download (`anyhow`) and interact (`ocaml`) with common machine learning datasets
       let tr, label = Cifar10.decode t3 n in
       Vcifar10.draw_and_inspect ~zoom:3 ~label (Vcifar10.aligned_colors tr) ;;
   ```
+
+This is a small library to simplify processing and interacting with a few
+common machine learning data sets. The code will call out to utilities such as
+`curl` to do the work.
